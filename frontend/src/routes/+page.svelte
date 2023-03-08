@@ -2,22 +2,32 @@
     import { onMount } from "svelte";
     import * as d3 from "d3";
     import TreeMap from "$lib/TreeMap.svelte";
+    import ImageGrid from "$lib/ImageGrid.svelte";
 
     let data;
     onMount(async () => {
-        await d3.json("/lossesv3.json").then((dt) => {
+        await d3.json("/losses_russia.json").then((dt) => {
             data = dt
         })
     });
+    let current;
+    let sources = [];
 </script>
 
-<div class="bg-stone-200 flex flex-row justify-center items-center min-h-screen">
+<div>
     {#if data}
     <TreeMap
-        width=800
-        height=800
+        on:leaf={(e)=>{current=e.detail}}
+        width=500
+        height=500
         {data}
         childrenAcc={(d)=>d.children}
         sumAcc={(d)=>d.losses_total}/>
+    {:else}
+        loading...
+    {/if}
+    {#if current}
+    <ImageGrid sources={current.images}/>
     {/if}
 </div>
+

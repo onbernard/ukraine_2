@@ -1,66 +1,47 @@
 import polars as pl
 from pathlib import Path
-from PIL import Image
-from collections import Counter, defaultdict
-from typing import Sequence
-import re
-from hierarchical import parent_index, path_to_root
+from collections import defaultdict
+from typing import Sequence, Dict, List
 
-path = Path(r"/mnt/z/DATASETS/ukraine/russia/russia/")
-
-def sort_tank_images(path_list:Sequence[Path]):
-    tank_img_index = defaultdict(list)
+def sort_tank_images(path_list:Sequence[Path], ref_models: List[str]):
+    index = defaultdict(list)
     for p in path_list:
         split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        if model=="Unknown":
-            model = "Unknown tank"
-        tank_img_index[model].append(p)
-    return tank_img_index
+        for part in split[1:-1]:
+            if model in ref_models:
+                break
+            model += " " + part
+        if model == "T-62 Obr 1967":
+            model = "T-62 Obr. 1967"
+        assert model in ref_models, model
+        index[model].append(Path('/',*p.parts[-3:]))
+    return index
 
-def test_sort_tank_images(path: Path):
-    index = sort_tank_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "Tanks" in path_to_root(model)
-    assert sum(len(v) for v in index.values()) == sum(1 for _ in path.rglob("*.*"))
-    return True
-
-
-
-def sort_afv_images(path_list: Sequence[Path]):
-    afv_index = defaultdict(list)
+def sort_afv_images(path_list: Sequence[Path], ref_models: List[str]):
+    index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "GAZ-3344-20 Aleut articulated tracked carrier":
             model = "GAZ-3344-20 'Aleut' articulated tracked carrier"
         if model == "Unknown BTR-D BMD-2":
             model = "Unknown BTR-D/BMD-2"
-        afv_index[model].append(p)
-    return afv_index
+        assert model in ref_models, model
+        index[model].append(Path('/',*p.parts[-3:]))
+    return index
 
-def test_sort_afv_images(path: Path):
-    index = sort_afv_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "AFV" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-
-def sort_ifv_images(path_list: Sequence[Path]):
-    ifv_index = defaultdict(list)
+def sort_ifv_images(path_list: Sequence[Path], ref_models: List[str]):
+    index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "BMP-1 P":
@@ -71,76 +52,58 @@ def sort_ifv_images(path_list: Sequence[Path]):
             model = "BTR-82A(M)"
         if model == "Unknown BMP-1 2":
             model = "Unknown BMP-1/2"
-        ifv_index[model].append(p)
-    return ifv_index
+        assert model in ref_models, model
+        index[model].append(Path('/',*p.parts[-3:]))
+    return index
 
-def test_sort_ifv_images(path: Path):
-    index = sort_ifv_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "IFV" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-
-def sort_apc_images(path_list: Sequence[Path]):
-    apc_index = defaultdict(list)
+def sort_apc_images(path_list: Sequence[Path], ref_models: List[str]):
+    index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "Unknown BTR-80 BTR-82A":
             model = "Unknown BTR-80/BTR-82A"
         if model == "BTR-MDM Rakushka":
             model = "BTR-MDM 'Rakushka'"
-        apc_index[model].append(p)
-    return apc_index
+        assert model in ref_models, model
+        index[model].append(Path('/',*p.parts[-3:]))
+    return index
 
-def test_sort_apc_images(path: Path):
-    index = sort_apc_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "APC" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_mrap_images(path_list: Sequence[Path]):
-    mrap_index = defaultdict(list)
+def sort_mrap_images(path_list: Sequence[Path], ref_models: List[str]):
+    index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
-        mrap_index[model].append(p)
-    return mrap_index
+        index[model].append(Path('/',*p.parts[-3:]))
+    return index
 
-def test_sort_mrap_images(path: Path):
-    index = sort_mrap_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "MRAP" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-
-def sort_c2_images(path_list: Sequence[Path]):
-    c2_index = defaultdict(list)
+def sort_imv_images(path_list: Sequence[Path], ref_models: List[str]):
+    index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
+                break
+            model += " " + part
+        index[model].append(Path('/',*p.parts[-3:]))
+    return index
+
+def sort_c2_images(path_list: Sequence[Path], ref_models: List[str]):
+    index = defaultdict(list)
+    for p in path_list:
+        split = [r for r in p.stem.split("_") if r]
+        model = split[0]
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "9S470M1 or variant thereof command post for Buk-M1 2":
@@ -161,26 +124,16 @@ def sort_c2_images(path_list: Sequence[Path]):
             model = "R-381T2M 1.5-3000 MHz radio monitoring station from a modernised R-381TM Taran-M automatic signals intelligence complex"
         if model == "Orlan-10":
             model = "Orlan-10 UAV control station"
-        c2_index[model].append(p)
-    return c2_index
+        index[model].append(Path('/',*p.parts[-3:]))
+    return index
 
-def test_sort_c2_images(path: Path):
-    index = sort_c2_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "C2" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_engineer_images(path_list: Sequence[Path]):
-    engineer_index = defaultdict(list)
+def sort_engineer_images(path_list: Sequence[Path], ref_models: List[str]):
+    index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index and model != "Ural-4320":
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "BREM-Ch BREM-4 armoured recovery vehicle":
@@ -193,50 +146,28 @@ def sort_engineer_images(path_list: Sequence[Path]):
             model = "PTS-2  tracked amphibious transport"
         if model == "UR-77 Meteorit mine clearing vehicle":
             model = "UR-77 'Meteorit'  mine clearing vehicle"
-        engineer_index[model].append(p)
-    return engineer_index
+        index[model].append(Path('/',*p.parts[-3:]))
+    return index
 
-def test_sort_engineer_images(path: Path):
-    index = sort_engineer_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "Engineering" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_spat_images(path_list: Sequence[Path]):
-    spat_index = defaultdict(list)
-    for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
-        model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
-                break
-            model += " " + part
-        spat_index[model].append(p)
-    return spat_index
-
-def test_sort_spat_images(path: Path):
-    index = sort_spat_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "SPATMS" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-
-
-def sort_arty_support_images(path_list: Sequence[Path]):
+def sort_spat_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
+                break
+            model += " " + part
+        index[model].append(Path('/',*p.parts[-3:]))
+    return index
+
+def sort_arty_support_images(path_list: Sequence[Path], ref_models: List[str]):
+    index = defaultdict(list)
+    for p in path_list:
+        split = [r for r in p.stem.split("_") if r]
+        model = split[0]
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "1V13 M battery fire control center":
@@ -247,140 +178,78 @@ def sort_arty_support_images(path_list: Sequence[Path]):
             model = "9T452 transporter-loader (for BM-27 'Uragan' MRL)"
         if model == "TZM-T reloader vehicle for TOS-1A":
             model = "TZM-T reloader vehicle (for TOS-1A)"
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_arty_support_images(path: Path):
-    index = sort_arty_support_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "Artillery Support" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-
-def sort_towed_images(path_list: Sequence[Path]):
+def sort_towed_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_towed_images(path: Path):
-    index = sort_towed_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "Towed Artillery" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_spa_images(path_list: Sequence[Path]):
+def sort_spa_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "152mm 2S3 M Akatsiya":
             model = "152mm 2S3(M) Akatsiya"
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_spa_images(path: Path):
-    index = sort_spa_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "SPA" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_mrl_images(path_list: Sequence[Path]):
+def sort_mrl_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_mrl_images(path: Path):
-    index = sort_mrl_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "MRL" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-
-def sort_aa_images(path_list: Sequence[Path]):
+def sort_aa_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_aa_images(path: Path):
-    index = sort_aa_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "AA" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_spaag_images(path_list: Sequence[Path]):
+def sort_spaag_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_spaag_images(path: Path):
-    index = sort_spaag_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "SPAAG" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_sam_images(path_list: Sequence[Path]):
+def sort_sam_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "9A310M1-2 TELAR for Buk-M1-2":
@@ -397,27 +266,16 @@ def sort_sam_images(path_list: Sequence[Path]):
             model = "9A331 TLAR (for 9K331 Tor-M1)"
         if model == "9A39M1-2 TEL for Buk-M1-2":
             model = "9A39M1-2 TEL (for Buk-M1-2)"
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_sam_images(path: Path):
-    index = sort_sam_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "SAM" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-
-def sort_radars_images(path_list: Sequence[Path]):
+def sort_radars_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "1L261 for 1L260 Zoopark-1M counter-battery radar complex":
@@ -430,80 +288,48 @@ def sort_radars_images(path_list: Sequence[Path]):
             model = "9S36 (for Buk-M2)"
         if model == "PPRU-1 M 9S80 -1 Sborka for 9K35 Strela-10":
             model = "PPRU-1(M) '9S80(-1)' 'Sborka' (for 9K35 Strela-10)"
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_radars_images(path: Path):
-    index = sort_radars_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "Radar" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-
-def sort_ew_images(path_list: Sequence[Path]):
+def sort_ew_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "1RL257 Krasukha-4 command post":
             model = "1RL257 Krasukha-4 (command post)"
         if model == "Torn -MDM":
             model = "Torn(-MDM)"
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_ew_images(path: Path):
-    index = sort_ew_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "EW" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_fixed_images(path_list: Sequence[Path]):
+def sort_fixed_wing_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "Su-24M MR strike tactical reconnaissance aircraft":
             model = "Su-24M/MR strike/tactical reconnaissance aircraft"
         if model == "Unknown Su-30 Su-34 Su-35":
             model = "Unknown Su-30/Su-34/Su-35"
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_fixed_images(path: Path):
-    index = sort_fixed_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "Fixed Wing" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-
-def sort_rotary_images(path_list: Sequence[Path]):
+def sort_rotary_wing_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "Ka-52 Alligator attack helicopter":
@@ -512,98 +338,60 @@ def sort_rotary_images(path_list: Sequence[Path]):
             model = "Mi-24P attack helicopter"
         if model == "Mi-24V P attack helicopter":
             model = "Mi-24V/P attack helicopter"
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_rotary_images(path: Path):
-    index = sort_rotary_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "Rotary Wing" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_ucav_images(path_list: Sequence[Path]):
+def sort_ucav_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models and model != "Orlan-10":
                 break
             model += " " + part
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_ucav_images(path: Path):
-    index = sort_ucav_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "UCAV" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_ruav_images(path_list: Sequence[Path]):
+def sort_ruav_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models and model != "Orlan-10":
                 break
             model += " " + part
         if model == "ZALA 421-16 2":
             model = "ZALA 421-16Е2"
         if model == "Orlan-20 Kartograf":
             model = "'Orlan-20' ''Kartograf''"
-        index[model].append(p)
+        if model == "Orlan-10 Moskit jamming UAV":
+            model = "Orlan-10 'Moskit' jamming UAV"
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_ruav_images(path: Path):
-    index = sort_ruav_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "RUAV" in path_to_root(model), (model, path_to_root(model))
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_ship_images(path_list: Sequence[Path]):
+def sort_ship_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "Project 1164 Slava-class guided missile cruiser Moskva": # RUSSIAN WARSHIP GO FUCK YOURSELF
             model = "Project 1164 Slava-class guided missile cruiser 'Moskva'"
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_ship_images(path: Path):
-    index = sort_ship_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "Ship" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_trucks_images(path_list: Sequence[Path]):
+def sort_trucks_images(path_list: Sequence[Path], ref_models: List[str]):
     index = defaultdict(list)
     for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
+        split = [r for r in p.stem.split("_") if r]
         model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
+        for part in split[1:-1]:
+            if model in ref_models:
                 break
             model += " " + part
         if model == "9T217 transloader for 9K33 Osa":
@@ -620,61 +408,57 @@ def sort_trucks_images(path_list: Sequence[Path]):
             model = "(Unknown) truck"
         if model == "Unknown vehicle":
             model = "(Unknown) vehicle"
-        index[model].append(p)
+        index[model].append(Path('/',*p.parts[-3:]))
     return index
 
-def test_sort_trucks_images(path: Path):
-    index = sort_trucks_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "Trucks&co" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-
-def sort_imv_images(path_list: Sequence[Path]):
-    index = defaultdict(list)
-    for p in path_list:
-        split = [r for r in p.stem.split("_")[:-1] if r]
-        model = split[0]
-        for part in split[1:]:
-            if model in parent_index:
-                break
-            model += " " + part
-        index[model].append(p)
-    return index
-
-def test_sort_imv_images(path: Path):
-    index = sort_imv_images(path.rglob("*.*"))
-    for model in index.keys():
-        assert "IMV" in path_to_root(model)
-    n_index = sum(len(v) for v in index.values())
-    n_imgs = sum(1 for _ in path.rglob("*.*"))
-    assert n_index == n_imgs, (n_index, n_imgs)
-    return True
-
-test_sort_ruav_images(path/"Reconnaissance_Unmanned_Aerial_Vehicles")
-test_sort_ship_images(path/"Naval_Ships")
-test_sort_trucks_images(path/"Trucks,_Vehicles_and_Jeeps")
-test_sort_imv_images(path/"Infantry_Mobility_Vehicles")
-test_sort_ucav_images(path/"UCAV")
-test_sort_rotary_images(path/"Helicopters")
-test_sort_fixed_images(path/"Aircraft")
-test_sort_ew_images(path/"Jammers_And_Deception_Systems")
-test_sort_radars_images(path/"Radars")
-test_sort_sam_images(path/"Surface-To-Air_Missile_Systems")
-test_sort_spaag_images(path/"Self-Propelled_Anti-Aircraft_Guns")
-test_sort_apc_images(path/"Armoured_Personnel_Carriers")
-test_sort_spat_images(path/"Self-Propelled_Anti-Tank_Missile_Systems")
-test_sort_engineer_images(path/"Engineering_Vehicles_And_Equipment")
-test_sort_c2_images(path/"Command_Posts_And_Communications_Stations")
-test_sort_mrap_images(path/"Mine-Resistant_Ambush_Protected")
-test_sort_ifv_images(path/"Infantry_Fighting_Vehicles")
-test_sort_afv_images(path/"Armoured_Fighting_Vehicles")
-test_sort_mrl_images(path/"Multiple_Rocket_Launchers")
-test_sort_towed_images(path/"Towed_Artillery")
-test_sort_arty_support_images(path/"Artillery_Support_Vehicles_And_Equipment")
-test_sort_tank_images(path/"Tanks")
-test_sort_spa_images(path/"Self-Propelled_Artillery")
-test_sort_aa_images(path/"Anti-Aircraft_Guns")
+def sort_images(df, path: Path) -> Dict[str, Dict[str, List[Path]]]:
+    tank_models = df.filter(df["equipment"]=="Tanks")["model"].unique().to_list()
+    afv_models = df.filter(df["equipment"]=="Armoured Fighting Vehicles")["model"].unique().to_list()
+    ifv_models = df.filter(df["equipment"]=="Infantry Fighting Vehicles")["model"].unique().to_list()
+    apc_models = df.filter(df["equipment"]=="Armoured Personnel Carriers")["model"].unique().to_list()
+    mrap_models = df.filter(df["equipment"]=="Mine-Resistant Ambush Protected")["model"].unique().to_list()
+    imv_models = df.filter(df["equipment"]=="Infantry Mobility Vehicles")["model"].unique().to_list()
+    c2_models = df.filter(df["equipment"]=="Command Posts And Communications Stations")["model"].unique().to_list()
+    engineer_models = df.filter(df["equipment"]=="Engineering Vehicles And Equipment")["model"].unique().to_list()
+    spat_models = df.filter(df["equipment"]=="Self-Propelled Anti-Tank Missile Systems")["model"].unique().to_list()
+    arty_supp_models = df.filter(df["equipment"]=="Artillery Support Vehicles And Equipment")["model"].unique().to_list()
+    towed_models = df.filter(df["equipment"]=="Towed Artillery")["model"].unique().to_list()
+    spa_models = df.filter(df["equipment"]=="Self-Propelled Artillery")["model"].unique().to_list()
+    mrl_models = df.filter(df["equipment"]=="Multiple Rocket Launchers")["model"].unique().to_list()
+    aa_models = df.filter(df["equipment"]=="Anti-Aircraft Guns")["model"].unique().to_list()
+    spaag_models = df.filter(df["equipment"]=="Self-Propelled Anti-Aircraft Guns")["model"].unique().to_list()
+    sam_models = df.filter(df["equipment"]=="Surface-To-Air Missile Systems")["model"].unique().to_list()
+    radar_models = df.filter(df["equipment"]=="Radars")["model"].unique().to_list()
+    ew_models = df.filter(df["equipment"]=="Jammers And Deception Systems")["model"].unique().to_list()
+    fixed_wing_models = df.filter(df["equipment"]=="Aircraft")["model"].unique().to_list()
+    rotary_wing_models = df.filter(df["equipment"]=="Helicopters")["model"].unique().to_list()
+    ucav_models = df.filter(df["equipment"]=="Unmanned Combat Aerial Vehicles")["model"].unique().to_list()
+    ruav_models = df.filter(df["equipment"]=="Reconnaissance Unmanned Aerial Vehicles")["model"].unique().to_list()
+    ship_models = df.filter(df["equipment"]=="Naval Ships")["model"].unique().to_list()
+    truck_models = df.filter(df["equipment"]=="Trucks, Vehicles and Jeeps")["model"].unique().to_list()
+    img_index = {}
+    img_index["Tank"] = sort_tank_images((path/"Tanks").rglob("*.*"), tank_models)
+    img_index["IMV"] = sort_imv_images((path/"Infantry_Mobility_Vehicles").rglob("*.*"), imv_models)
+    img_index["AFV"] = sort_afv_images((path/"Armoured_Fighting_Vehicles").rglob("*.*"), afv_models)
+    img_index["IFV"] = sort_ifv_images((path/"Infantry_Fighting_Vehicles").rglob("*.*"), ifv_models)
+    img_index["APC"] = sort_apc_images((path/"Armoured_Personnel_Carriers").rglob("*.*"), apc_models)
+    img_index["MRAP"] = sort_mrap_images((path/"Mine-Resistant_Ambush_Protected").rglob("*.*"), mrap_models)
+    img_index["C2"] = sort_c2_images((path/"Command_Posts_And_Communications_Stations").rglob("*.*"), c2_models)
+    img_index["Engineering"] = sort_engineer_images((path/"Engineering_Vehicles_And_Equipment").rglob("*.*"), engineer_models)
+    img_index["SPATMS"] = sort_spat_images((path/"Self-Propelled_Anti-Tank_Missile_Systems").rglob("*.*"), spat_models)
+    img_index["Artillery Support"] = sort_arty_support_images((path/"Artillery_Support_Vehicles_And_Equipment").rglob("*.*"), arty_supp_models)
+    img_index["Towed Artillery"] = sort_towed_images((path/"Towed_Artillery").rglob("*.*"), towed_models)
+    img_index["SPA"] = sort_spa_images((path/"Self-Propelled_Artillery").rglob("*.*"), spa_models)
+    img_index["MRL"] = sort_mrl_images((path/"Multiple_Rocket_Launchers").rglob("*.*"), mrl_models)
+    img_index["AA"] = sort_aa_images((path/"Anti-Aircraft_Guns").rglob("*.*"), aa_models)
+    img_index["SPAAG"] = sort_spaag_images((path/"Self-Propelled_Anti-Aircraft_Guns").rglob("*.*"), spaag_models)
+    img_index["SAM"] = sort_sam_images((path/"Surface-To-Air_Missile_Systems").rglob("*.*"), sam_models)
+    img_index["Radar"] = sort_radars_images((path/"Radars").rglob("*.*"), radar_models)
+    img_index["EW"] = sort_ew_images((path/"Jammers_And_Deception_Systems").rglob("*.*"), ew_models)
+    img_index["Fixed Wing"] = sort_fixed_wing_images((path/"Aircraft").rglob("*.*"), fixed_wing_models)
+    img_index["Rotary Wing"] = sort_rotary_wing_images((path/"Helicopters").rglob("*.*"), rotary_wing_models)
+    img_index["UCAV"] = sort_ucav_images((path/"Unmanned_Combat_Aerial_Vehicles").rglob("*.*"), ucav_models)
+    img_index["RUAV"] = sort_ruav_images((path/"Reconnaissance_Unmanned_Aerial_Vehicles").rglob("*.*"), ruav_models)
+    img_index["Ship"] = sort_ship_images((path/"Naval_Ships").rglob("*.*"), ship_models)
+    img_index["Trucks&co"] = sort_trucks_images((path/"Trucks,_Vehicles_and_Jeeps").rglob("*.*"), truck_models)
+    return img_index

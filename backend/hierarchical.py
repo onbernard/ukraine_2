@@ -1,10 +1,13 @@
 import polars as pl
 from pydantic import BaseModel
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict
 from collections import defaultdict
+from pathlib import Path
+
 
 class Record(BaseModel):
     name: str
+    images: List[Path] = []
     losses_total: Optional[int] = None
     children: List["Record"] = []
 
@@ -501,20 +504,23 @@ def test_index_validity(df: pl.DataFrame):
         assert bool(r.children) != bool(r.losses_total)
     return True
 
-def dict_to_records(key: str, val: Union[int, defaultdict]) -> Record:
+def dict_to_records(key: str, val: Union[int, defaultdict], img_index: Dict[str, List[Path]]) -> Record:
     if isinstance(val, int):
-        return Record(name=key, losses_total=val)
-    return Record(name=key, children=[dict_to_records(k,v) for k,v in val.items()])
+        return Record(name=key, losses_total=val, images=img_index[key])
+    return Record(
+        name=key,
+        children=[dict_to_records(k,v, img_index) for k,v in val.items()],
+        images=img_index[key])
 
-def df_to_records(df: pl.DataFrame) -> Record:
+def df_to_records(df: pl.DataFrame, img_index: Dict[str, List[Path]]) -> Record:
     tree = lambda: defaultdict(tree)
     root = tree()
     for row in df.rows():
         walker = root
-        for asc in path_to_root(row[1])[::-1]:
+        for asc in path_to_root(row[0])[::-1]:
             walker = walker[asc]
-        walker[row[1]] = row[4]
-    return dict_to_records("All", root["All"])
+        walker[row[0]] = row[1]
+    return dict_to_records("All", root["All"], img_index)
 
 def losses_csv_to_hierarchical_jsonv2(input_csv_path: str, output_json_path: str):
     df = pl.read_csv(input_csv_path)
