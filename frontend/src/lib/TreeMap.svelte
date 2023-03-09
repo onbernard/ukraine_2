@@ -1,5 +1,5 @@
 <script>
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, beforeUpdate, afterUpdate, tick } from 'svelte';
     import * as d3 from "d3";
     export let height = 800;
     export let width = 800;
@@ -10,28 +10,25 @@
     export let padding = 1;
     const dispatch = createEventDispatcher();
     
-    $: textElems = [];
-    const x = d3.scaleLinear()
-        .domain([0,1])
-        .range([0,width]);
-    const y = d3.scaleLinear()
-        .domain([0,1])
-        .range([0,height]);
+    let textElems = [];
     const treemap = d3.treemap()
         .size([width,height])
         .padding([padding])
         .tile(d3.treemapSquarify);
     let current = d3.hierarchy(data, childrenAcc);
     $: root = treemap(current.copy().sum(sumAcc));
-    $: {console.log(root)}
     const zoomIn = (child, idx) => {
-        if (child.children) current = current.children[idx];
+        if (child.children) {
+            current = current.children[idx];
+        }
         else {
             dispatch("leaf", child.data);
         }
     }
     const zoomOut = () => {
-        if (current.parent) current = current.parent;
+        if (current.parent) {
+            current = current.parent;
+        }
     }
     const childWidth = (child) => (child.x1-child.x0);
     const childHeight = (child) => (child.y1-child.y0);
@@ -39,21 +36,66 @@
     let hoveredChild;
     let hovered=false;
     const hoverEnterRect = (idx) => {
-        if (textElems[idx].getBBox().width > childWidth(root.children[idx])){
+        if (isOverflowing(idx)){
             hoveredId = idx;
             hoveredChild = root.children[idx];
             hovered = true;
         }
     }
-    const hoverLeaveRect = (idx) => {
+    const hoverLeaveRect = () => {
         hoveredId = null;
         hoveredChild = null;
         hovered = false;
     }
+    const isOverflowingRight = (idx) => {
+        return root.children[idx].x0+textElems[idx].getBBox().x + textElems[idx].getBBox().width > width;
+    }
+    const isOverflowingLeft = (idx) => {
+        return root.children[idx].x0+textElems[idx].getBBox().x < 0;
+    }
+    const isOverflowingBottom = (idx) => {
+        return root.children[idx].y0+textElems[idx].getBBox().y + textElems[idx].getBBox().height > height;
+    }
+    const isOverflowingTop = (idx) => {
+        return root.children[idx].y0+textElems[idx].getBBox().y < 0;
+    }
+    const isOverflowing = (idx) => (
+        textElems[idx].getBBox().width > childWidth(root.children[idx]) ||
+        isOverflowingRight(idx) ||
+        isOverflowingLeft(idx) ||
+        isOverflowingBottom(idx) ||
+        isOverflowingTop(idx)
+    )
+    const overflowOffsetX = (idx) => {
+        if (isOverflowingRight(idx)) {
+            return root.children[idx].x0+textElems[idx].getBBox().x + textElems[idx].getBBox().width - width;
+        }
+        else if (isOverflowingLeft(idx)) {
+            return root.children[idx].x0+textElems[idx].getBBox().x;
+        }
+        return 0;
+    }
+    const overflowOffsetY = (idx) => {
+        if (isOverflowingBottom(idx)) {
+            return root.children[idx].y0+textElems[idx].getBBox().y + textElems[idx].getBBox().height - height;
+        }
+        else if (isOverflowingTop(idx)) {
+            return root.children[idx].y0+textElems[idx].getBBox().y;
+        }
+        return 0;
+    }
+    const overflow = (idx) => {
+        let outp= `translate(${root.children[idx].x0-overflowOffsetX(idx)},${root.children[idx].y0-overflowOffsetY(idx)})`
+        console.log(outp)
+        return outp
+    }
+    afterUpdate(()=>{
+        textElems = textElems;
+    })
 </script>
 
 <svg height={+height+zoomOutHeight} {width}>
-    <rect class="go-back" on:click={zoomOut}
+    <rect class="go-back" on:click={zoomOut} on:keyup
         width={width-2*padding}
         height={zoomOutHeight-2*padding}
         x={padding}
@@ -67,15 +109,10 @@
         {#each root.children as child, idx}
             <g
                 id={idx}
-                on:click={()=>zoomIn(child, idx)} on:mouseenter={()=>hoverEnterRect(idx)} on:mouseleave={()=>hoverLeaveRect(idx)}
+                on:click={()=>zoomIn(child, idx)} on:mouseenter={()=>hoverEnterRect(idx)} on:mouseleave={hoverLeaveRect} on:keyup
                 transform="translate({child.x0},{child.y0})"
             >
-                <clipPath id="clip{idx}">
-                    <rect
-                    width={childWidth(child)}
-                    height={childHeight(child)}
-                />
-                </clipPath>
+                
                 <rect
                     style="--border:{padding}"
                     class="model-rect"
@@ -84,14 +121,29 @@
                     height={childHeight(child)}
                     stroke="black"
                 />
-                {#if textElems[idx]}
-                <rect
-                    class="text-box"
-                    x={textElems[idx].getBBox().x}
-                    y={textElems[idx].getBBox().y}
-                    width={textElems[idx].getBBox().width}
-                    height={textElems[idx].getBBox().height}
+                
+            </g>
+        {/each}
+        {#each root.children as child, idx}
+            <g
+                id={idx}
+                on:click={()=>zoomIn(child, idx)} on:mouseenter={()=>hoverEnterRect(idx)} on:mouseleave={hoverLeaveRect} on:keyup
+                transform="translate({child.x0},{child.y0})"
+            >
+                <clipPath id="clip{idx}">
+                    <rect
+                    width={childWidth(child)}
+                    height={childHeight(child)}
                 />
+                </clipPath>
+                {#if textElems[idx]}
+                    <rect
+                        class="text-box"
+                        clip-path="url(#clip{idx})"
+                        x={textElems[idx].getBBox().x}
+                        y={textElems[idx].getBBox().y}
+                        width={textElems[idx].getBBox().width}
+                        height={textElems[idx].getBBox().height}/>                    
                 {/if}
                 <text bind:this={textElems[idx]} id="text{idx}"
                     clip-path="url(#clip{idx})"
@@ -102,14 +154,23 @@
                     {child.data.name}
                 </text>
             </g>
-            {/each}
+        {/each}
             {#if hovered}
+            <g transform={overflow(hoveredId)} class="hovered-ctnr">
+                <rect
+                    class="text-box"
+                    x={textElems[hoveredId].getBBox().x}
+                    y={textElems[hoveredId].getBBox().y}
+                    width={textElems[hoveredId].getBBox().width}
+                    height={textElems[hoveredId].getBBox().height}
+                />
                 <text
-                    x={root.children[hoveredId].x0+childWidth(root.children[hoveredId])/2.}
-                    y={root.children[hoveredId].y0+childHeight(root.children[hoveredId])/2.}
+                    x={+childWidth(hoveredChild)/2.}
+                    y={+childHeight(hoveredChild)/2.}
                     dominant-baseline="middle"
                     text-anchor="middle"
                 >{root.children[hoveredId].data.name}</text>
+            </g>
             {/if}
         </g>
 </svg>
@@ -120,13 +181,15 @@
     }
     text {
         font-size: small;
-        font-weight: 600;
+        font-weight: 700;
         fill: #263238;
         pointer-events: none;
         background-color: red;
     }
     .text-box {
-        fill: white;
+        fill: #eff1f5;
+        stroke-width: 1px;
+        stroke: #7c7f93;
     }
     .model-rect {
         fill: #ccd0da;
@@ -138,5 +201,8 @@
     .model-rect.clickable:hover {
         stroke-width: var(--border);
         stroke: #7c7f93;
+    }
+    .hovered-ctnr {
+        pointer-events: none;
     }
 </style>
