@@ -16,6 +16,7 @@
 </footer>
 
 <style lang="postcss">
+    @import "@catppuccin/palette/style";
     :global(body) {
         display: flex;
         flex-direction: column;
