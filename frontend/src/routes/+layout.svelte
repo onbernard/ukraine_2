@@ -4,13 +4,16 @@
 </script>
 
 <header>
-    🇺🇦
+    <span class="flex flex-row" title="Слава Україні">🇺🇦 <img width="30px" src="/fella.webp"> 🇺🇦</span>
 </header>
 <main>
     <slot />
 </main>
 <footer>
-    <a href="https://github.com/onbernard/ukraine_2">
+    <a 
+        target="_blank"
+        rel="noreferrer noopener"
+        href="https://github.com/onbernard/ukraine_2">
         <Icon src="/icons/github.svg" color="#dc8a78"/>
     </a>
 </footer>
@@ -26,7 +29,9 @@
     }
     header {
         @apply fixed top-0 left-0 w-full h-8 flex flex-row justify-center items-center;
-        background-color: #dce0e8
+        @apply font-sans font-semibold;
+        background-color: #dce0e8;
+        color: var(--ctp-latte-text);
     }
     main {
         @apply mt-8;
